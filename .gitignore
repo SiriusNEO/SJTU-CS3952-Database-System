@@ -1,0 +1,11 @@
+# database files
+*.db
+
+# Py cache
+__pycache__/
+
+# Apple DS store
+.DS_Store
+
+.idea/
+.vscode/
