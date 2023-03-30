@@ -161,6 +161,10 @@ class BuyerAPI:
             get_user_col().update_one(
                 {"_id": seller}, {"$inc": {"balance": total_price}}
             )
+
+            # delete the order
+            result = get_order_col().delete_one({"_id": order_id})
+            assert result.deleted_count == 1
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
         except BaseException as e:
