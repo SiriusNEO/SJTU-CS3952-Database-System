@@ -5,7 +5,7 @@ POST http://$address$/auth/register
 
 #### Request
 
-Body: 
+Body:
 ```
 {
     "user_id":"$user name$",

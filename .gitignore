@@ -1,11 +1,14 @@
 # database files
 *.db
+mongodb/
 
 # Py cache
 __pycache__/
+.pytest_cache
 
 # Apple DS store
 .DS_Store
 
+.coverage
 .idea/
 .vscode/
