@@ -95,4 +95,5 @@ PRIMARY KEY(order_id, book_id)
   - book_id
   - count
   - price
-
+- order_state
+  - (unpaid,paid,delivered,Canceled,Finished)

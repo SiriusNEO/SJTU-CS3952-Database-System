@@ -71,3 +71,11 @@ def user_id_exists(user_id: str) -> bool:
 
 def store_id_exists(store_id: str) -> bool:
     return get_store_col().count_documents({"_id": store_id}) > 0
+
+
+def order_id_exists(order_id: str) -> bool:
+    return get_order_col().count_documents({"_id": order_id}) > 0
+
+
+def book_id_exists(book_id: str) -> bool:
+    return get_book_col().count_documents({"_id": book_id}) > 0

@@ -40,3 +40,42 @@ def add_funds():
     b = BuyerAPI()
     code, message = b.add_funds(user_id, password, add_value)
     return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/receive_order", methods=["POST"])
+def receive_order():
+    user_id = request.json.get("user_id")
+    password = request.json.get("password")
+    order_id = request.json.get("order_id")
+    b = BuyerAPI()
+    code, message = b.receive_order(user_id, password, order_id)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/cancel_order", methods=["POST"])
+def cancel_order():
+    user_id = request.json.get("user_id")
+    password = request.json.get("password")
+    order_id = request.json.get("order_id")
+    b = BuyerAPI()
+    code, message = b.cancel_order(user_id, password, order_id)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/query_all_order", methods=["POST"])
+def query_all_order():
+    user_id = request.json.get("user_id")
+    password = request.json.get("password")
+    b = BuyerAPI()
+    code, message = b.query_all_order(user_id, password)
+    return jsonify({"message": message}), code
+
+
+@bp_buyer.route("/query_one_order", methods=["POST"])
+def query_one_order():
+    user_id = request.json.get("user_id")
+    password = request.json.get("password")
+    order_id = request.json.get("order_id")
+    b = BuyerAPI()
+    code, message = b.query_one_order(user_id, password, order_id)
+    return jsonify({"message": message}), code

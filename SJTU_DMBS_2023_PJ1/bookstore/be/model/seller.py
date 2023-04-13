@@ -6,8 +6,12 @@ from be.model import error
 from be.model.mongo_manager import (
     get_store_col,
     get_book_col,
+    get_user_col,
+    get_order_col,
     user_id_exists,
     store_id_exists,
+    book_id_exists,
+    order_id_exists,
 )
 
 
@@ -156,6 +160,52 @@ class SellerAPI:
             )
         except pymongo.errors.DuplicateKeyError as e:
             return error.error_exist_store_id(store_id)
+        except pymongo.errors.PyMongoError as e:
+            logging.info("528, {}".format(str(e)))
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            logging.info("530, {}".format(str(e)))
+            return 530, "{}".format(str(e))
+
+        return 200, "ok"
+
+    def send_order(self, store_id: str, order_id: str) -> (int, str):
+        """A user create a store.
+
+        Parameters
+        ----------
+        user_id : str
+            The user_id of the creator.
+
+        store_id : str
+            The store_id of the created store.
+
+        Returns
+        -------
+        (code : int, msg : str)
+            The return status.
+        """
+        try:
+            if not order_id_exists(order_id):
+                return error.error_non_exist_order_id(order_id)
+            if not store_id_exists(store_id):
+                return error.error_non_exist_store_id(store_id)
+
+            cursor = get_order_col().find_one({"_id": order_id})
+            if cursor is None:
+                return error.error_invalid_order_id(order_id)
+
+            if cursor["state"] != "paid":
+                return error.error_order_state_id(cursor["state"])
+
+            if cursor["store"] != store_id:
+                return error.error_store_id_match(cursor["store"], store_id)
+
+            # update the order state
+            get_order_col().update_one(
+                {"_id": order_id}, {"$set": {"state": "delivered"}}
+            )
+
         except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e))
