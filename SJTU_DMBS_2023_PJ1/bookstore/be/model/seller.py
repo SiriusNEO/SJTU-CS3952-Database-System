@@ -193,10 +193,10 @@ class SellerAPI:
 
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor is None:
-                return error.error_invalid_order_id(order_id)
+                return error.error_non_exist_order_id(order_id)
 
             if cursor["state"] != "paid":
-                return error.error_order_state_id(cursor["state"])
+                return error.error_order_state(cursor["state"])
 
             if cursor["store"] != store_id:
                 return error.error_store_id_match(cursor["store"], store_id)

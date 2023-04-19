@@ -65,7 +65,6 @@ PRIMARY KEY(order_id, book_id)
 - balance
 - token
 - terminal
-- own_stores (list, child reference)
 
 
 
@@ -87,12 +86,12 @@ PRIMARY KEY(order_id, book_id)
 ##### Doc order
 
 - order_id
-
 - buyer (user_id)
-- buy_from (store_id)
+- store (store_id)
 - total_price
 - books (list)
   - book_id
   - count
   - price
-- order_state (`Literal[unpaid, paid, delivered, canceled, finished]`)
+- state (`Literal[unpaid, paid, delivered, canceled, finished]`)
+- timestamp

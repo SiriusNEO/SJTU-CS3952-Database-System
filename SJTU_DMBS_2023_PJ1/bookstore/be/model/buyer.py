@@ -86,8 +86,7 @@ class BuyerAPI:
                     {"$inc": {"stock_level": -count}},
                 )
                 assert cursor.matched_count > 0
-                if cursor.modified_count != cursor.matched_count:
-                    return error.error_stock_level_low(book_id) + (order_id,)
+                assert cursor.modified_count == cursor.matched_count
 
                 total_price += count * price
                 order_data_books.append(
@@ -137,9 +136,9 @@ class BuyerAPI:
         try:
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor is None:
-                return error.error_invalid_order_id(order_id)
+                return error.error_non_exist_order_id(order_id)
             if cursor["state"] != "unpaid":
-                return error.error_order_state_id(cursor["state"])
+                return error.error_order_state(cursor["state"])
             if cursor["buyer"] != user_id:
                 return error.error_authorization_fail()
 
@@ -150,7 +149,7 @@ class BuyerAPI:
 
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor["state"] != "unpaid":
-                return error.error_order_state_id(cursor["state"])
+                return error.error_order_state(cursor["state"])
             total_price = cursor["total_price"]
 
             cursor = get_user_col().find_one({"_id": user_id})
@@ -256,22 +255,20 @@ class BuyerAPI:
             if cursor["password"] != password:
                 return error.error_authorization_fail()
 
-            if not order_id_exists(order_id):
-                return error.error_non_exist_order_id(order_id)
-
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor is None:
-                return error.error_invalid_order_id(order_id)
+                return error.error_non_exist_order_id(order_id)
 
             if cursor["state"] != "delivered":
-                return error.error_order_state_id(cursor["state"])
+                return error.error_order_state(cursor["state"])
 
             if cursor["buyer"] != user_id:
                 return error.error_user_id_match(cursor["buyer"], user_id)
-            store_cursor = get_store_col().find_one({"_id": cursor["store"]})
 
+            store_cursor = get_store_col().find_one({"_id": cursor["store"]})
             if store_cursor is None:
                 return error.error_non_exist_store_id(cursor["store"])
+
             seller = store_cursor["owner"]
             # seller's balance += total_price
             get_user_col().update_one(
@@ -317,6 +314,7 @@ class BuyerAPI:
 
             if not order_id_exists(order_id):
                 return error.error_non_exist_order_id(order_id)
+
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor["state"] == "canceled" or cursor["state"] == "finished":
                 return error.error_order_state(cursor["state"])
@@ -332,8 +330,8 @@ class BuyerAPI:
                     },
                 )
 
-                if book_cursor is None:
-                    return error.error_non_exist_book_id(book["book_id"]) + (order_id,)
+                # in the list of the order, so it must exist
+                assert book_cursor is not None
 
                 book_cursor = get_book_col().update_one(
                     {
@@ -435,7 +433,7 @@ class BuyerAPI:
 
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor is None:
-                return error.error_invalid_order_id(order_id)
+                return error.error_non_exist_order_id(order_id)
 
             if check_expired(cursor["timestamp"]):
                 code, message = self.cancel_order(user_id, password, order_id)

@@ -1,0 +1,47 @@
+Name                                     Stmts   Miss Branch BrPart  Cover   Missing
+------------------------------------------------------------------------------------
+be/__init__.py                               0      0      0      0   100%
+be/app.py                                    3      3      2      0     0%   1-4
+be/model/__init__.py                         0      0      0      0   100%
+be/model/buyer.py                          178     58     94      5    65%   110-111, 148, 186-189, 225-226, 270, 282-285, 334, 357-360, 379-399, 420-449
+be/model/error.py                           31      2      0      0    94%   65, 85
+be/model/mongo_manager.py                   36      1      0      0    97%   81
+be/model/seller.py                          73     26     34      4    64%   71-76, 126-131, 153, 163-168, 196, 209-214
+be/model/user.py                           139     49     46      7    62%   93->exit, 95->exit, 97-99, 131-136, 163-168, 194-199, 237-243, 278-284, 311-317, 363-369
+be/model/utils.py                            6      0      2      0   100%
+be/serve.py                                 35      1      2      1    95%   17
+be/view/__init__.py                          0      0      0      0   100%
+be/view/auth.py                             42      0      0      0   100%
+be/view/buyer.py                            65     11      2      0    84%   67-71, 76-81
+be/view/seller.py                           38      0      0      0   100%
+fe/__init__.py                               0      0      0      0   100%
+fe/access/__init__.py                        0      0      0      0   100%
+fe/access/auth.py                           31      0      0      0   100%
+fe/access/book.py                           70      1     12      2    96%   37, 85->84
+fe/access/buyer.py                          60     10      2      0    84%   75-79, 82-90
+fe/access/new_buyer.py                       8      0      0      0   100%
+fe/access/new_seller.py                      8      0      0      0   100%
+fe/access/seller.py                         37      0      0      0   100%
+fe/bench/__init__.py                         0      0      0      0   100%
+fe/bench/run.py                             13      0      6      0   100%
+fe/bench/session.py                         47      0     12      1    98%   38->42
+fe/bench/workload.py                       125      1     22      2    98%   43->45, 91
+fe/conf.py                                  11      0      0      0   100%
+fe/conftest.py                              17      0      0      0   100%
+fe/test/gen_book_data.py                    48      0     16      0   100%
+fe/test/test_add_book.py                    36      0     10      0   100%
+fe/test/test_add_funds.py                   26      0      0      0   100%
+fe/test/test_add_stock_level.py             39      0     10      0   100%
+fe/test/test_bench.py                        6      2      0      0    67%   7-8
+fe/test/test_cancel_order.py                92      2      8      2    96%   42, 63
+fe/test/test_create_store.py                20      0      0      0   100%
+fe/test/test_login.py                       28      0      0      0   100%
+fe/test/test_new_order.py                   46      0      2      0   100%
+fe/test/test_order_state.py                 60      1      4      1    97%   42
+fe/test/test_password.py                    33      0      0      0   100%
+fe/test/test_payment.py                    110      2      8      2    97%   49, 70
+fe/test/test_pressure.py                     0      0      0      0   100%
+fe/test/test_register.py                    31      0      0      0   100%
+fe/test/test_ship_and_receive_order.py      95      1      4      1    98%   49
+------------------------------------------------------------------------------------
+TOTAL                                     1743    171    298     28    88%

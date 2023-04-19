@@ -90,3 +90,30 @@ class TestCancelOrder:
         assert code == 200
         code = self.buyer.cancel_order(self.order_id2)
         assert code == 200
+
+    def test_non_exist_user(self):
+        self.buyer.user_id = "xxx"
+        code = self.buyer.cancel_order(self.order_id1)
+        assert code == 511
+
+    def test_authorization_error(self):
+        self.buyer.password += "_x"
+        code = self.buyer.cancel_order(self.order_id1)
+        assert code == 401
+
+    def test_non_exist_order(self):
+        code = self.buyer.cancel_order("xxx")
+        assert code == 520
+
+    def test_repeat_cancel(self):
+        code = self.buyer.add_funds(self.total_price1)
+        assert code == 200
+
+        code = self.buyer.payment(self.order_id1)
+        assert code == 200
+
+        code = self.buyer.cancel_order(self.order_id1)
+        assert code == 200
+
+        code = self.buyer.cancel_order(self.order_id1)
+        assert code != 200

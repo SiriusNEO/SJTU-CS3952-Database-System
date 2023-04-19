@@ -17,32 +17,52 @@ class TestNewOrder:
         yield
 
     def test_non_exist_book_id(self):
-        ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=True, low_stock_level=False)
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=True, low_stock_level=False
+        )
         assert ok
         code, _ = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code != 200
 
     def test_low_stock_level(self):
-        ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False, low_stock_level=True)
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=True
+        )
         assert ok
         code, _ = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code != 200
 
     def test_ok(self):
-        ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False, low_stock_level=False)
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
         assert ok
         code, _ = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code == 200
 
     def test_non_exist_user_id(self):
-        ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False, low_stock_level=False)
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
         assert ok
         self.buyer.user_id = self.buyer.user_id + "_x"
         code, _ = self.buyer.new_order(self.store_id, buy_book_id_list)
         assert code != 200
 
     def test_non_exist_store_id(self):
-        ok, buy_book_id_list = self.gen_book.gen(non_exist_book_id=False, low_stock_level=False)
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
         assert ok
         code, _ = self.buyer.new_order(self.store_id + "_x", buy_book_id_list)
         assert code != 200
+
+    def test_py_base_exception(self):
+        ok, buy_book_id_list = self.gen_book.gen(
+            non_exist_book_id=False, low_stock_level=False
+        )
+        assert ok
+        # dirty data: None
+        buy_book_id_list = [(book_id, None) for book_id, _ in buy_book_id_list]
+        code, _ = self.buyer.new_order(self.store_id, buy_book_id_list)
+        assert code == 530
