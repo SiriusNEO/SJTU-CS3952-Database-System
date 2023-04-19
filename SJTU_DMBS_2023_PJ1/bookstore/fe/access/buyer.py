@@ -71,14 +71,15 @@ class Buyer:
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
 
-    def query_all_order(self) -> int:
+    def query_all_orders(self) -> (int, list):
         json = {"user_id": self.user_id, "password": self.password}
-        url = urljoin(self.url_prefix, "query_all_order")
+        url = urljoin(self.url_prefix, "query_all_orders")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
-        return r.status_code
+        response_json = r.json()
+        return r.status_code, response_json.get("orders")
 
-    def query_one_order(self, order_id: str) -> int:
+    def query_one_order(self, order_id: str) -> (int, dict):
         json = {
             "user_id": self.user_id,
             "password": self.password,
@@ -87,4 +88,5 @@ class Buyer:
         url = urljoin(self.url_prefix, "query_one_order")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
-        return r.status_code
+        response_json = r.json()
+        return r.status_code, response_json.get("order")

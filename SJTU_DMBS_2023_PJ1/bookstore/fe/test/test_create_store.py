@@ -24,3 +24,9 @@ class TestCreateStore:
 
         code = self.seller.create_store(self.store_id)
         assert code != 200
+
+    def test_non_exist_user_id(self):
+        self.seller = register_new_seller(self.user_id, self.password)
+        self.seller.seller_id = "xxx"
+        code = self.seller.create_store(self.store_id)
+        assert code == 511

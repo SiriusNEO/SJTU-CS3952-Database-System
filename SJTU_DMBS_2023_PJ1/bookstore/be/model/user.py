@@ -233,8 +233,7 @@ class UserAPI:
 
             # Otherwise it will return in check_password
             assert cursor.matched_count > 0
-            if cursor.modified_count != cursor.matched_count:
-                return error.error_authorization_fail() + ("",)
+            assert cursor.modified_count == cursor.matched_count
         except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e)), ""
@@ -274,8 +273,7 @@ class UserAPI:
 
             # Otherwise it will return in check_token
             assert cursor.matched_count > 0
-            if cursor.modified_count != cursor.matched_count:
-                return error.error_authorization_fail()
+            assert cursor.modified_count == cursor.matched_count
         except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e))
@@ -359,8 +357,7 @@ class UserAPI:
 
             # Otherwise it will return in check_password
             assert cursor.matched_count > 0
-            if cursor.modified_count != cursor.matched_count:
-                return error.error_authorization_fail()
+            assert cursor.modified_count == cursor.matched_count
         except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
             return 528, "{}".format(str(e))

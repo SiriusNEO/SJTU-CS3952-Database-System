@@ -186,8 +186,6 @@ class SellerAPI:
             The return status.
         """
         try:
-            if not order_id_exists(order_id):
-                return error.error_non_exist_order_id(order_id)
             if not store_id_exists(store_id):
                 return error.error_non_exist_store_id(store_id)
 

@@ -62,13 +62,13 @@ def cancel_order():
     return jsonify({"message": message}), code
 
 
-@bp_buyer.route("/query_all_order", methods=["POST"])
-def query_all_order():
+@bp_buyer.route("/query_all_orders", methods=["POST"])
+def query_all_orders():
     user_id = request.json.get("user_id")
     password = request.json.get("password")
     b = BuyerAPI()
-    code, message = b.query_all_order(user_id, password)
-    return jsonify({"message": message}), code
+    code, message, orders = b.query_all_orders(user_id, password)
+    return jsonify({"message": message, "orders": orders}), code
 
 
 @bp_buyer.route("/query_one_order", methods=["POST"])
@@ -77,5 +77,5 @@ def query_one_order():
     password = request.json.get("password")
     order_id = request.json.get("order_id")
     b = BuyerAPI()
-    code, message = b.query_one_order(user_id, password, order_id)
-    return jsonify({"message": message}), code
+    code, message, order = b.query_one_order(user_id, password, order_id)
+    return jsonify({"message": message, "order": order}), code

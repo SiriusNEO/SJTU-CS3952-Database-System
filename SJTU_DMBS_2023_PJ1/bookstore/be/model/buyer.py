@@ -1,5 +1,7 @@
 """Buyer related APIs."""
 
+from typing import Optional
+
 import time
 import uuid
 import json
@@ -360,7 +362,9 @@ class BuyerAPI:
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def query_all_orders(self, user_id: str, password: str) -> (int, str):
+    def query_all_orders(
+        self, user_id: str, password: str
+    ) -> (int, str, Optional[list]):
         """A buyer queries all his orders.
 
         Parameters
@@ -373,32 +377,28 @@ class BuyerAPI:
 
         Returns
         -------
-        (code : int, msg : str)
-            The return status.
+        (code : int, msg : str, orders: List[dict])
+            The return status and the queried orders.
         """
         try:
             cursor = get_user_col().find_one({"_id": user_id})
             if cursor is None:
-                return error.error_non_exist_user_id(user_id)
+                return error.error_non_exist_user_id(user_id) + (None,)
 
             if cursor["password"] != password:
-                return error.error_authorization_fail()
+                return error.error_authorization_fail() + (None,)
 
             order_cursors = get_order_col().find({"buyer": user_id})
-            for order_cursor in order_cursors:
-                code, message = self.cancel_order(
-                    user_id, password, order_cursor["order_id"]
-                )
-                if code != 200:
-                    return code, message
 
         except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
+            return 528, "{}".format(str(e)), None
         except BaseException as e:
-            return 530, "{}".format(str(e))
-        return 200, "ok"
+            return 530, "{}".format(str(e)), None
+        return 200, "ok", list(order_cursors)
 
-    def query_one_order(self, user_id: str, password: str, order_id: str) -> (int, str):
+    def query_one_order(
+        self, user_id: str, password: str, order_id: str
+    ) -> (int, str, Optional[dict]):
         """A buyer queries one specified order.
 
         Parameters
@@ -414,36 +414,23 @@ class BuyerAPI:
 
         Returns
         -------
-        (code : int, msg : str)
-            The return status.
+        (code : int, msg : str, order : dict)
+            The return status and the queried order.
         """
         try:
             cursor = get_user_col().find_one({"_id": user_id})
             if cursor is None:
-                return error.error_non_exist_user_id(user_id)
+                return error.error_non_exist_user_id(user_id) + (None,)
 
             if cursor["password"] != password:
-                return error.error_authorization_fail()
-
-            if not order_id_exists(order_id):
-                return error.error_non_exist_order_id(order_id)
-
-            if cursor["buyer"] != user_id:
-                return error.error_user_id_match(cursor["buyer"], user_id)
+                return error.error_authorization_fail() + (None,)
 
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor is None:
-                return error.error_non_exist_order_id(order_id)
-
-            if check_expired(cursor["timestamp"]):
-                code, message = self.cancel_order(user_id, password, order_id)
-                if code != 200:
-                    return code, message
-
-            cursor = get_order_col().find_one({"_id": order_id})
+                return error.error_non_exist_order_id(order_id) + (None,)
 
         except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e))
+            return 528, "{}".format(str(e)), None
         except BaseException as e:
-            return 530, "{}".format(str(e))
-        return 200, "ok"
+            return 530, "{}".format(str(e)), None
+        return 200, "ok", cursor
