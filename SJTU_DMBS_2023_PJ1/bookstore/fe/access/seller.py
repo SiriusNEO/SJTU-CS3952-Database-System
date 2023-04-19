@@ -53,10 +53,10 @@ class Seller:
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
 
-    def send_order(self, store_id: str, order_id: str) -> int:
+    def mark_order_shipped(self, store_id: str, order_id: str) -> int:
         json = {"store_id": store_id, "order_id": order_id}
         # print(simplejson.dumps(json))
-        url = urljoin(self.url_prefix, "send_order")
+        url = urljoin(self.url_prefix, "mark_order_shipped")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code

@@ -49,13 +49,13 @@ class Buyer:
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
 
-    def receive_order(self, order_id: str) -> int:
+    def mark_order_received(self, order_id: str) -> int:
         json = {
             "user_id": self.user_id,
             "password": self.password,
             "order_id": order_id,
         }
-        url = urljoin(self.url_prefix, "receive_order")
+        url = urljoin(self.url_prefix, "mark_order_received")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code

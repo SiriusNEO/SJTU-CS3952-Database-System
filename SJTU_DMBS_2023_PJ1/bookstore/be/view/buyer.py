@@ -42,13 +42,13 @@ def add_funds():
     return jsonify({"message": message}), code
 
 
-@bp_buyer.route("/receive_order", methods=["POST"])
-def receive_order():
+@bp_buyer.route("/mark_order_received", methods=["POST"])
+def mark_order_received():
     user_id = request.json.get("user_id")
     password = request.json.get("password")
     order_id = request.json.get("order_id")
     b = BuyerAPI()
-    code, message = b.receive_order(user_id, password, order_id)
+    code, message = b.mark_order_received(user_id, password, order_id)
     return jsonify({"message": message}), code
 
 

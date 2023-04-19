@@ -169,16 +169,16 @@ class SellerAPI:
 
         return 200, "ok"
 
-    def send_order(self, store_id: str, order_id: str) -> (int, str):
-        """A user create a store.
+    def mark_order_shipped(self, store_id: str, order_id: str) -> (int, str):
+        """The seller marks an order as shipped.
 
         Parameters
         ----------
-        user_id : str
-            The user_id of the creator.
-
         store_id : str
-            The store_id of the created store.
+            The store_id of the order.
+
+        order_id : str
+            The shipped order.
 
         Returns
         -------

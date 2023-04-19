@@ -44,12 +44,12 @@ def add_stock_level():
     return jsonify({"message": message}), code
 
 
-@bp_seller.route("/send_order", methods=["POST"])
-def send_order():
+@bp_seller.route("/mark_order_shipped", methods=["POST"])
+def mark_order_shipped():
     store_id: str = request.json.get("store_id")
     order_id: str = request.json.get("order_id")
 
     s = seller.SellerAPI()
-    code, message = s.send_order(store_id, order_id)
+    code, message = s.mark_order_shipped(store_id, order_id)
 
     return jsonify({"message": message}), code

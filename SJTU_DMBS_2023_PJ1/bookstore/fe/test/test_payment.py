@@ -19,55 +19,95 @@ class TestPayment:
 
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
-        self.seller_id = "test_payment_seller_id_{}".format(str(uuid.uuid1()))
-        self.store_id = "test_payment_store_id_{}".format(str(uuid.uuid1()))
+        self.seller_id1 = "test_payment_seller_id_{}".format(str(uuid.uuid1()))
+        self.store_id1 = "test_payment_store_id_{}".format(str(uuid.uuid1()))
         self.buyer_id = "test_payment_buyer_id_{}".format(str(uuid.uuid1()))
-        self.password = self.seller_id
-        gen_book = GenBook(self.seller_id, self.store_id)
-        ok, buy_book_id_list = gen_book.gen(
-            non_exist_book_id=False, low_stock_level=False, max_book_count=5
-        )
-        self.buy_book_info_list = gen_book.buy_book_info_list
-        assert ok
-        b = register_new_buyer(self.buyer_id, self.password)
+        self.password1 = self.seller_id1
+        gen_book1 = GenBook(self.seller_id1, self.store_id1)
+        ok1, buy_book_id_list1 = gen_book1.gen(non_exist_book_id=False, low_stock_level=False, max_book_count=5)
+        self.buy_book_info_list1 = gen_book1.buy_book_info_list
+        assert ok1
+        b = register_new_buyer(self.buyer_id, self.password1)
         self.buyer = b
-        code, self.order_id = b.new_order(self.store_id, buy_book_id_list)
+        code, self.order_id1 = b.new_order(self.store_id1, buy_book_id_list1)
         assert code == 200
-        self.total_price = 0
-        for item in self.buy_book_info_list:
+        self.total_price1 = 0
+        for item in self.buy_book_info_list1:
             book: Book = item[0]
             num = item[1]
             if book.price is None:
                 continue
             else:
-                self.total_price = self.total_price + book.price * num
+                self.total_price1 = self.total_price1 + book.price * num
 
+
+        self.seller_id2 = "test_payment_seller_id_{}".format(str(uuid.uuid1()))
+        self.store_id2 = "test_payment_store_id_{}".format(str(uuid.uuid1()))
+        self.password2 = self.seller_id2
+        gen_book2 = GenBook(self.seller_id2, self.store_id2)
+        ok2, buy_book_id_list2 = gen_book2.gen(non_exist_book_id=False, low_stock_level=False, max_book_count=5)
+        self.buy_book_info_list2 = gen_book2.buy_book_info_list
+        assert ok2
+        # b2 = register_new_buyer(self.buyer_id, self.password2)
+        code, self.order_id2 = b.new_order(self.store_id2, buy_book_id_list2)
+        assert code == 200
+        self.total_price2 = 0
+        for item in self.buy_book_info_list2:
+            book: Book = item[0]
+            num = item[1]
+            if book.price is None:
+                continue
+            else:
+                self.total_price2 = self.total_price2 + book.price * num
         yield
 
     def test_ok(self):
-        code = self.buyer.add_funds(self.total_price)
+        code = self.buyer.add_funds(self.total_price1)
         assert code == 200
-        code = self.buyer.payment(self.order_id)
+        code = self.buyer.payment(self.order_id1)
         assert code == 200
 
+    def test_ok_two_orders(self):
+        code = self.buyer.add_funds(self.total_price1 + self.total_price2)
+        assert code == 200
+        code = self.buyer.payment(self.order_id1)
+        assert code == 200
+        code = self.buyer.payment(self.order_id2)
+        assert code == 200
+
+    def test_benefit_not_enough(self):
+        code = self.buyer.add_funds(self.total_price1 - 1)
+        assert code == 200
+
+        code = self.buyer.payment(self.order_id1)
+        assert code != 200
+
+    def test_benefit_not_enough_two_orders(self):
+        code = self.buyer.add_funds(self.total_price1 + self.total_price2 - 1)
+        assert code == 200
+        code = self.buyer.payment(self.order_id1)
+        assert code == 200
+        code = self.buyer.payment(self.order_id2)
+        assert code != 200
+
     def test_authorization_error(self):
-        code = self.buyer.add_funds(self.total_price)
+        code = self.buyer.add_funds(self.total_price1)
         assert code == 200
         self.buyer.password = self.buyer.password + "_x"
-        code = self.buyer.payment(self.order_id)
+        code = self.buyer.payment(self.order_id1)
         assert code != 200
 
     def test_not_suff_funds(self):
-        code = self.buyer.add_funds(self.total_price - 1)
+        code = self.buyer.add_funds(self.total_price1 - 1)
         assert code == 200
-        code = self.buyer.payment(self.order_id)
+        code = self.buyer.payment(self.order_id1)
         assert code != 200
 
     def test_repeat_pay(self):
-        code = self.buyer.add_funds(self.total_price)
+        code = self.buyer.add_funds(self.total_price1)
         assert code == 200
-        code = self.buyer.payment(self.order_id)
+        code = self.buyer.payment(self.order_id1)
         assert code == 200
 
-        code = self.buyer.payment(self.order_id)
+        code = self.buyer.payment(self.order_id1)
         assert code != 200

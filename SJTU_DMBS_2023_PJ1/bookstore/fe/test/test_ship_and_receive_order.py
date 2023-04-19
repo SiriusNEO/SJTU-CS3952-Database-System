@@ -8,7 +8,7 @@ from fe.access.book import Book
 import uuid
 import time
 
-class TestPayment:
+class TestShipAndReceiveOrder:
     seller_id: str
     store_id: str
     buyer_id: str
@@ -20,9 +20,9 @@ class TestPayment:
 
     @pytest.fixture(autouse=True)
     def pre_run_initialization(self):
-        self.seller_id = "test_payment_seller_id_{}".format(str(uuid.uuid1()))
-        self.store_id = "test_payment_store_id_{}".format(str(uuid.uuid1()))
-        self.buyer_id = "test_payment_buyer_id_{}".format(str(uuid.uuid1()))
+        self.seller_id = "test_ship_and_receive_order_seller_id_{}".format(str(uuid.uuid1()))
+        self.store_id = "test_ship_and_receive_order_store_id_{}".format(str(uuid.uuid1()))
+        self.buyer_id = "test_ship_and_receive_order_buyer_id_{}".format(str(uuid.uuid1()))
         self.password = self.seller_id
         gen_book = GenBook(self.seller_id, self.store_id)
         ok, buy_book_id_list = gen_book.gen(non_exist_book_id=False, low_stock_level=False, max_book_count=5)
@@ -43,25 +43,25 @@ class TestPayment:
         self.seller = gen_book.seller
         yield
 
-
-    def test_send_and_receive(self):
+    def test_one_round_ship_and_receive_ok(self):
         code = self.buyer.add_funds(self.total_price)
         assert code == 200
 
         code = self.buyer.payment(self.order_id)
         assert code == 200
 
-        code = self.seller.send_order(self.store_id,self.order_id)
+        code = self.seller.mark_order_shipped(self.store_id,self.order_id)
         assert code == 200
 
-        code = self.buyer.receive_order(self.order_id)
+        code = self.buyer.mark_order_received(self.order_id)
         assert code == 200
-    def test_nosend_and_receive(self):
+
+    def test_receive_without_shipping(self):
         code = self.buyer.add_funds(self.total_price)
         assert code == 200
 
         code = self.buyer.payment(self.order_id)
         assert code == 200
 
-        code = self.buyer.receive_order(self.order_id)
+        code = self.buyer.mark_order_received(self.order_id)
         assert code != 200

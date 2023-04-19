@@ -16,7 +16,7 @@ from be.model.mongo_manager import (
     order_id_exists,
     book_id_exists,
 )
-from be.model.utils import out_of_time_check
+from be.model.utils import check_expired
 
 
 class BuyerAPI:
@@ -104,7 +104,7 @@ class BuyerAPI:
                     "total_price": total_price,
                     "books": order_data_books,
                     "state": "unpaid",
-                    "order_time": now_time,
+                    "timestamp": now_time,
                 }
             )
         except pymongo.errors.PyMongoError as e:
@@ -143,7 +143,7 @@ class BuyerAPI:
             if cursor["buyer"] != user_id:
                 return error.error_authorization_fail()
 
-            if out_of_time_check(cursor["order_time"]):
+            if check_expired(cursor["timestamp"]):
                 code, message = self.cancel_order(user_id, password, order_id)
                 if code != 200:
                     return code, message
@@ -227,19 +227,21 @@ class BuyerAPI:
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def receive_order(self, user_id: str, password: str, order_id: str) -> (int, str):
-        """receive order.
+    def mark_order_received(
+        self, user_id: str, password: str, order_id: str
+    ) -> (int, str):
+        """Mark an order as received by user.
 
         Parameters
         ----------
         user_id : str
-            The user_id of the account.
+            The user_id of the buyer.
 
         password : str
-            The password of the account.
+            The password of the buyer.
 
         order_id : str
-            the order_id of the receive order
+            The order_id of the received order.
 
         Returns
         -------
@@ -277,7 +279,6 @@ class BuyerAPI:
             )
 
             # update the order state
-
             get_order_col().update_one(
                 {"_id": order_id}, {"$set": {"state": "finished"}}
             )
@@ -288,18 +289,18 @@ class BuyerAPI:
         return 200, "ok"
 
     def cancel_order(self, user_id: str, password: str, order_id: str) -> (int, str):
-        """cancel_order
+        """The buyer cancels an order.
 
         Parameters
         ----------
         user_id : str
-            The user_id of the account.
+            The user_id of the buyer.
 
         password : str
-            The password of the account.
+            The password of the buyer.
 
         order_id : str
-            the order_id of the cancel_order
+            The order_id of the canceled order.
 
         Returns
         -------
@@ -361,16 +362,16 @@ class BuyerAPI:
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def query_all_order(self, user_id: str, password: str) -> (int, str):
-        """query_all_order
+    def query_all_orders(self, user_id: str, password: str) -> (int, str):
+        """A buyer queries all his orders.
 
         Parameters
         ----------
         user_id : str
-            The user_id of the account.
+            The user_id of the buyer.
 
         password : str
-            The password of the account.
+            The password of the buyer.
 
         Returns
         -------
@@ -400,18 +401,18 @@ class BuyerAPI:
         return 200, "ok"
 
     def query_one_order(self, user_id: str, password: str, order_id: str) -> (int, str):
-        """query_one_order
+        """A buyer queries one specified order.
 
         Parameters
         ----------
         user_id : str
-            The user_id of the account.
+            The user_id of the buyer.
 
         password : str
-            The password of the account.
+            The password of the buyer.
 
         order_id : str
-            the order_id of the query_order
+            the order_id of the queried order.
 
         Returns
         -------
@@ -436,7 +437,7 @@ class BuyerAPI:
             if cursor is None:
                 return error.error_invalid_order_id(order_id)
 
-            if out_of_time_check(cursor["order_time"]):
+            if check_expired(cursor["timestamp"]):
                 code, message = self.cancel_order(user_id, password, order_id)
                 if code != 200:
                     return code, message

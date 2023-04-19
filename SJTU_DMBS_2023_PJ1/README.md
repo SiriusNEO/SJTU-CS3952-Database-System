@@ -30,8 +30,8 @@
 1)实现后续的流程 <br>
 发货 -> 收货
 
-增加seller接口 send_order finish
-增加buyer接口 receive_order finish
+增加seller接口 mark_order_shipped finish
+增加buyer接口 mark_order_received finish
 
 2)搜索图书 <br>
 用户可以通过关键字搜索，参数化的搜索方式；
@@ -39,9 +39,9 @@
 如果显示结果较大，需要分页
 (使用全文索引优化查找)
 
-3)订单状态，订单查询和取消定单<br>
+3)订单状态，订单查询和取消订单<br>
 用户可以查自已的历史订单，用户也可以取消订单。<br>
-取消定单可由买家主动地取消定单，或者买家下单后，经过一段时间超时仍未付款，定单也会自动取消。 <br>
+取消订单可由买家主动地取消订单，或者买家下单后，经过一段时间超时仍未付款，定单也会自动取消。 <br>
 
 给订单增加时间戳
 buyer增加查询订单的操作 finish
@@ -87,9 +87,8 @@ bookstore
 
 （注意：如果提示"RuntimeError: Not running with the Werkzeug Server"，请输入下述命令，将flask和Werkzeug的版本均降低为2.0.0。
 
-     pip install flask==2.0.0
-
-     pip install Werkzeug==2.0.0）
+    pip install flask==2.0.0
+    pip install Werkzeug==2.0.0
 
 ## 要求
 
