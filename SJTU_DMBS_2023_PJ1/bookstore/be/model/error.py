@@ -1,4 +1,3 @@
-
 error_code = {
     401: "authorization fail.",
     511: "non exist user id {}",
@@ -10,11 +9,11 @@ error_code = {
     517: "stock level low, book id {}",
     518: "invalid order id {}",
     519: "not sufficient funds, order id {}",
-    520: "",
-    521: "",
-    522: "",
-    523: "",
-    524: "",
+    520: "non exist order id",
+    521: "exist order id",
+    522: "the order state is error, order state: {}",
+    523: "the user is not match {},{}",
+    524: "the store is not match {},{}",
     525: "",
     526: "",
     527: "",
@@ -39,11 +38,11 @@ def error_exist_store_id(store_id):
 
 
 def error_non_exist_book_id(book_id):
-    return 515,  error_code[515].format(book_id)
+    return 515, error_code[515].format(book_id)
 
 
 def error_exist_book_id(book_id):
-    return 516,  error_code[516].format(book_id)
+    return 516, error_code[516].format(book_id)
 
 
 def error_stock_level_low(book_id):
@@ -56,6 +55,26 @@ def error_invalid_order_id(order_id):
 
 def error_not_sufficient_funds(order_id):
     return 519, error_code[518].format(order_id)
+
+
+def error_non_exist_order_id(order_id):
+    return 520, error_code[515].format(order_id)
+
+
+def error_exist_order_id(order_id):
+    return 521, error_code[521].format(order_id)
+
+
+def error_order_state(order_state):
+    return 522, error_code[522].format(order_state)
+
+
+def error_user_id_match(user1, user2):
+    return 523, error_code[523].format(user1, user2)
+
+
+def error_store_id_match(store1, store2):
+    return 524, error_code[524].format(store1, store2)
 
 
 def error_authorization_fail():

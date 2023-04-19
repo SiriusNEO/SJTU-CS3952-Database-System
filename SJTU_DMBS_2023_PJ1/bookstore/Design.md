@@ -95,4 +95,4 @@ PRIMARY KEY(order_id, book_id)
   - book_id
   - count
   - price
-
+- order_state (`Literal[unpaid, paid, delivered, canceled, finished]`)

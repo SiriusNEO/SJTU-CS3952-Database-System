@@ -1,5 +1,6 @@
 """Buyer related APIs."""
 
+import time
 import uuid
 import json
 import pymongo
@@ -12,7 +13,10 @@ from be.model.mongo_manager import (
     get_book_col,
     user_id_exists,
     store_id_exists,
+    order_id_exists,
+    book_id_exists,
 )
+from be.model.utils import check_expired
 
 
 class BuyerAPI:
@@ -91,6 +95,7 @@ class BuyerAPI:
                 )
 
             order_id = uid
+            now_time = time.time()
             get_order_col().insert_one(
                 {
                     "_id": order_id,
@@ -98,6 +103,8 @@ class BuyerAPI:
                     "store": store_id,
                     "total_price": total_price,
                     "books": order_data_books,
+                    "state": "unpaid",
+                    "timestamp": now_time,
                 }
             )
         except pymongo.errors.PyMongoError as e:
@@ -131,24 +138,28 @@ class BuyerAPI:
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor is None:
                 return error.error_invalid_order_id(order_id)
-
+            if cursor["state"] != "unpaid":
+                return error.error_order_state_id(cursor["state"])
             if cursor["buyer"] != user_id:
                 return error.error_authorization_fail()
+
+            if check_expired(cursor["timestamp"]):
+                code, message = self.cancel_order(user_id, password, order_id)
+                if code != 200:
+                    return code, message
+
+            cursor = get_order_col().find_one({"_id": order_id})
+            if cursor["state"] != "unpaid":
+                return error.error_order_state_id(cursor["state"])
             total_price = cursor["total_price"]
-            store = cursor["store"]
 
             cursor = get_user_col().find_one({"_id": user_id})
             if cursor is None:
                 return error.error_non_exist_user_id(user_id)
-
             if password != cursor["password"]:
                 return error.error_authorization_fail()
-            balance = cursor["balance"]
 
-            cursor = get_store_col().find_one({"_id": store})
-            if cursor is None:
-                return error.error_non_exist_store_id(store)
-            seller = cursor["owner"]
+            balance = cursor["balance"]
 
             if balance < total_price:
                 return error.error_not_sufficient_funds(order_id)
@@ -157,14 +168,22 @@ class BuyerAPI:
             get_user_col().update_one(
                 {"_id": user_id}, {"$inc": {"balance": -total_price}}
             )
-            # seller's balance -= total_price
-            get_user_col().update_one(
-                {"_id": seller}, {"$inc": {"balance": total_price}}
-            )
 
-            # delete the order
-            result = get_order_col().delete_one({"_id": order_id})
-            assert result.deleted_count == 1
+            # cursor = get_store_col().find_one({"_id": store})
+            # if cursor is None:
+            #     return error.error_non_exist_store_id(store)
+            # seller = cursor["owner"]
+            # # seller's balance += total_price
+            # get_user_col().update_one(
+            #     {"_id": seller}, {"$inc": {"balance": total_price}}
+            # )
+
+            # # delete the order
+            # result = get_order_col().delete_one({"_id": order_id})
+            # assert result.deleted_count == 1
+
+            # update the order state
+            get_order_col().update_one({"_id": order_id}, {"$set": {"state": "paid"}})
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
         except BaseException as e:
@@ -202,6 +221,229 @@ class BuyerAPI:
             get_user_col().update_one(
                 {"_id": user_id}, {"$inc": {"balance": add_value}}
             )
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok"
+
+    def mark_order_received(
+        self, user_id: str, password: str, order_id: str
+    ) -> (int, str):
+        """Mark an order as received by user.
+
+        Parameters
+        ----------
+        user_id : str
+            The user_id of the buyer.
+
+        password : str
+            The password of the buyer.
+
+        order_id : str
+            The order_id of the received order.
+
+        Returns
+        -------
+        (code : int, msg : str)
+            The return status.
+        """
+        try:
+            cursor = get_user_col().find_one({"_id": user_id})
+            if cursor is None:
+                return error.error_non_exist_user_id(user_id)
+
+            if cursor["password"] != password:
+                return error.error_authorization_fail()
+
+            if not order_id_exists(order_id):
+                return error.error_non_exist_order_id(order_id)
+
+            cursor = get_order_col().find_one({"_id": order_id})
+            if cursor is None:
+                return error.error_invalid_order_id(order_id)
+
+            if cursor["state"] != "delivered":
+                return error.error_order_state_id(cursor["state"])
+
+            if cursor["buyer"] != user_id:
+                return error.error_user_id_match(cursor["buyer"], user_id)
+            store_cursor = get_store_col().find_one({"_id": cursor["store"]})
+
+            if store_cursor is None:
+                return error.error_non_exist_store_id(cursor["store"])
+            seller = store_cursor["owner"]
+            # seller's balance += total_price
+            get_user_col().update_one(
+                {"_id": seller}, {"$inc": {"balance": cursor["total_price"]}}
+            )
+
+            # update the order state
+            get_order_col().update_one(
+                {"_id": order_id}, {"$set": {"state": "finished"}}
+            )
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok"
+
+    def cancel_order(self, user_id: str, password: str, order_id: str) -> (int, str):
+        """The buyer cancels an order.
+
+        Parameters
+        ----------
+        user_id : str
+            The user_id of the buyer.
+
+        password : str
+            The password of the buyer.
+
+        order_id : str
+            The order_id of the canceled order.
+
+        Returns
+        -------
+        (code : int, msg : str)
+            The return status.
+        """
+        try:
+            cursor = get_user_col().find_one({"_id": user_id})
+            if cursor is None:
+                return error.error_non_exist_user_id(user_id)
+
+            if cursor["password"] != password:
+                return error.error_authorization_fail()
+
+            if not order_id_exists(order_id):
+                return error.error_non_exist_order_id(order_id)
+            cursor = get_order_col().find_one({"_id": order_id})
+            if cursor["state"] == "canceled" or cursor["state"] == "finished":
+                return error.error_order_state(cursor["state"])
+
+            # for the book stock
+            for book in cursor["books"]:
+                book_cursor = get_book_col().find_one(
+                    {
+                        "_id": {
+                            "store_id": cursor["store"],
+                            "book_id": book["book_id"],
+                        }
+                    },
+                )
+
+                if book_cursor is None:
+                    return error.error_non_exist_book_id(book["book_id"]) + (order_id,)
+
+                book_cursor = get_book_col().update_one(
+                    {
+                        "_id": {
+                            "store_id": cursor["store"],
+                            "book_id": book["book_id"],
+                        }
+                    },
+                    {"$inc": {"stock_level": book["count"]}},
+                )
+
+            # for back money
+            if cursor["state"] == "paid" or cursor["state"] == "delivered":
+                # buyer's balance -= total_price
+                get_user_col().update_one(
+                    {"_id": user_id}, {"$inc": {"balance": cursor["total_price"]}}
+                )
+            # update the order state
+            get_order_col().update_one(
+                {"_id": order_id}, {"$set": {"state": "canceled"}}
+            )
+
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok"
+
+    def query_all_orders(self, user_id: str, password: str) -> (int, str):
+        """A buyer queries all his orders.
+
+        Parameters
+        ----------
+        user_id : str
+            The user_id of the buyer.
+
+        password : str
+            The password of the buyer.
+
+        Returns
+        -------
+        (code : int, msg : str)
+            The return status.
+        """
+        try:
+            cursor = get_user_col().find_one({"_id": user_id})
+            if cursor is None:
+                return error.error_non_exist_user_id(user_id)
+
+            if cursor["password"] != password:
+                return error.error_authorization_fail()
+
+            order_cursors = get_order_col().find({"buyer": user_id})
+            for order_cursor in order_cursors:
+                code, message = self.cancel_order(
+                    user_id, password, order_cursor["order_id"]
+                )
+                if code != 200:
+                    return code, message
+
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e))
+        except BaseException as e:
+            return 530, "{}".format(str(e))
+        return 200, "ok"
+
+    def query_one_order(self, user_id: str, password: str, order_id: str) -> (int, str):
+        """A buyer queries one specified order.
+
+        Parameters
+        ----------
+        user_id : str
+            The user_id of the buyer.
+
+        password : str
+            The password of the buyer.
+
+        order_id : str
+            the order_id of the queried order.
+
+        Returns
+        -------
+        (code : int, msg : str)
+            The return status.
+        """
+        try:
+            cursor = get_user_col().find_one({"_id": user_id})
+            if cursor is None:
+                return error.error_non_exist_user_id(user_id)
+
+            if cursor["password"] != password:
+                return error.error_authorization_fail()
+
+            if not order_id_exists(order_id):
+                return error.error_non_exist_order_id(order_id)
+
+            if cursor["buyer"] != user_id:
+                return error.error_user_id_match(cursor["buyer"], user_id)
+
+            cursor = get_order_col().find_one({"_id": order_id})
+            if cursor is None:
+                return error.error_invalid_order_id(order_id)
+
+            if check_expired(cursor["timestamp"]):
+                code, message = self.cancel_order(user_id, password, order_id)
+                if code != 200:
+                    return code, message
+
+            cursor = get_order_col().find_one({"_id": order_id})
+
         except pymongo.errors.PyMongoError as e:
             return 528, "{}".format(str(e))
         except BaseException as e:

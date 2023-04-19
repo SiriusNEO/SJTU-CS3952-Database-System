@@ -19,7 +19,7 @@ class Seller:
             "user_id": self.seller_id,
             "store_id": store_id,
         }
-        #print(simplejson.dumps(json))
+        # print(simplejson.dumps(json))
         url = urljoin(self.url_prefix, "create_store")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
@@ -30,23 +30,33 @@ class Seller:
             "user_id": self.seller_id,
             "store_id": store_id,
             "book_info": book_info.__dict__,
-            "stock_level": stock_level
+            "stock_level": stock_level,
         }
-        #print(simplejson.dumps(json))
+        # print(simplejson.dumps(json))
         url = urljoin(self.url_prefix, "add_book")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
 
-    def add_stock_level(self, seller_id: str, store_id: str, book_id: str, add_stock_num: int) -> int:
+    def add_stock_level(
+        self, seller_id: str, store_id: str, book_id: str, add_stock_num: int
+    ) -> int:
         json = {
             "user_id": seller_id,
             "store_id": store_id,
             "book_id": book_id,
-            "add_stock_level": add_stock_num
+            "add_stock_level": add_stock_num,
         }
-        #print(simplejson.dumps(json))
+        # print(simplejson.dumps(json))
         url = urljoin(self.url_prefix, "add_stock_level")
+        headers = {"token": self.token}
+        r = requests.post(url, headers=headers, json=json)
+        return r.status_code
+
+    def mark_order_shipped(self, store_id: str, order_id: str) -> int:
+        json = {"store_id": store_id, "order_id": order_id}
+        # print(simplejson.dumps(json))
+        url = urljoin(self.url_prefix, "mark_order_shipped")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
         return r.status_code
