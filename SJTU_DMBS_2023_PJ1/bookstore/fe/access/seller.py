@@ -36,6 +36,7 @@ class Seller:
         url = urljoin(self.url_prefix, "add_book")
         headers = {"token": self.token}
         r = requests.post(url, headers=headers, json=json)
+        print("ms",r.json().get("message"))
         return r.status_code
 
     def add_stock_level(
