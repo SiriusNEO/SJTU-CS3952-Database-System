@@ -66,7 +66,8 @@ class UserAPI:
 
     token_lifetime: int = 3600  # 3600 second
 
-    def __check_token(self, user_id, db_token, token) -> bool:
+    @staticmethod
+    def __check_token(user_id, db_token, token) -> bool:
         """Check whether the token is matched in the database.
 
         Parameters
@@ -92,13 +93,14 @@ class UserAPI:
             ts = jwt_text["timestamp"]
             if ts is not None:
                 now = time.time()
-                if self.token_lifetime > now - ts >= 0:
+                if UserAPI.token_lifetime > now - ts >= 0:
                     return True
         except jwt.exceptions.InvalidSignatureError as e:
             logging.error(str(e))
             return False
 
-    def register(self, user_id: str, password: str) -> (int, str):
+    @staticmethod
+    def register(user_id: str, password: str) -> (int, str):
         """User register.
 
         Parameters
@@ -137,7 +139,8 @@ class UserAPI:
 
         return 200, "ok"
 
-    def check_token(self, user_id: str, token: str) -> (int, str):
+    @staticmethod
+    def check_token(user_id: str, token: str) -> (int, str):
         """Check token (public API).
 
         Parameters
@@ -158,7 +161,7 @@ class UserAPI:
             if cursor is None:
                 return error.error_authorization_fail()
             db_token = cursor["token"]
-            if not self.__check_token(user_id, db_token, token):
+            if not UserAPI.__check_token(user_id, db_token, token):
                 return error.error_authorization_fail()
         except pymongo.errors.PyMongoError as e:
             logging.info("528, {}".format(str(e)))
@@ -169,7 +172,8 @@ class UserAPI:
 
         return 200, "ok"
 
-    def check_password(self, user_id: str, password: str) -> (int, str):
+    @staticmethod
+    def check_password(user_id: str, password: str) -> (int, str):
         """Check password for an account.
 
         Parameters
@@ -200,7 +204,8 @@ class UserAPI:
 
         return 200, "ok"
 
-    def login(self, user_id: str, password: str, terminal: str) -> (int, str, str):
+    @staticmethod
+    def login(user_id: str, password: str, terminal: str) -> (int, str, str):
         """Account login.
 
         Parameters
@@ -221,7 +226,7 @@ class UserAPI:
         """
         token = ""
         try:
-            code, message = self.check_password(user_id, password)
+            code, message = UserAPI.check_password(user_id, password)
             if code != 200:
                 return code, message, ""
 
@@ -243,7 +248,8 @@ class UserAPI:
 
         return 200, "ok", token
 
-    def logout(self, user_id: str, token: str) -> (int, str):
+    @staticmethod
+    def logout(user_id: str, token: str) -> (int, str):
         """Account logout.
 
         Parameters
@@ -260,7 +266,7 @@ class UserAPI:
             The return status.
         """
         try:
-            code, message = self.check_token(user_id, token)
+            code, message = UserAPI.check_token(user_id, token)
             if code != 200:
                 return code, message
 
@@ -283,7 +289,8 @@ class UserAPI:
 
         return 200, "ok"
 
-    def unregister(self, user_id: str, password: str) -> (int, str):
+    @staticmethod
+    def unregister(user_id: str, password: str) -> (int, str):
         """Unregister the account.
 
         Parameters
@@ -300,7 +307,7 @@ class UserAPI:
             The return status.
         """
         try:
-            code, message = self.check_password(user_id, password)
+            code, message = UserAPI.check_password(user_id, password)
             if code != 200:
                 return code, message
 
@@ -316,8 +323,9 @@ class UserAPI:
 
         return 200, "ok"
 
+    @staticmethod
     def change_password(
-        self, user_id: str, old_password: str, new_password: str
+        user_id: str, old_password: str, new_password: str
     ) -> (int, str):
         """Change password for an account.
 
@@ -338,7 +346,7 @@ class UserAPI:
             The return status.
         """
         try:
-            code, message = self.check_password(user_id, old_password)
+            code, message = UserAPI.check_password(user_id, old_password)
             if code != 200:
                 return code, message
 

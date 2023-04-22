@@ -1,7 +1,5 @@
 """Buyer related APIs."""
 
-from typing import Optional
-
 import time
 import uuid
 import json
@@ -24,8 +22,8 @@ from be.model.utils import check_expired
 class BuyerAPI:
     """Backend APIs related to buyer manipulation."""
 
+    @staticmethod
     def new_order(
-        self,
         user_id: str,
         store_id: str,
         books: [(str, int)],
@@ -116,7 +114,8 @@ class BuyerAPI:
             return 530, "{}".format(str(e)), ""
         return 200, "ok", order_id
 
-    def payment(self, user_id: str, password: str, order_id: str) -> (int, str):
+    @staticmethod
+    def payment(user_id: str, password: str, order_id: str) -> (int, str):
         """The buyer pay for an order.
 
         Parameters
@@ -149,9 +148,6 @@ class BuyerAPI:
                 if code != 200:
                     return code, message
 
-            cursor = get_order_col().find_one({"_id": order_id})
-            if cursor["state"] != "unpaid":
-                return error.error_order_state(cursor["state"])
             total_price = cursor["total_price"]
 
             cursor = get_user_col().find_one({"_id": user_id})
@@ -191,7 +187,8 @@ class BuyerAPI:
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def add_funds(self, user_id: str, password: str, add_value: int) -> (int, str):
+    @staticmethod
+    def add_funds(user_id: str, password: str, add_value: int) -> (int, str):
         """Add funds for an account.
 
         Parameters
@@ -228,9 +225,8 @@ class BuyerAPI:
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def mark_order_received(
-        self, user_id: str, password: str, order_id: str
-    ) -> (int, str):
+    @staticmethod
+    def mark_order_received(user_id: str, password: str, order_id: str) -> (int, str):
         """Mark an order as received by user.
 
         Parameters
@@ -287,7 +283,8 @@ class BuyerAPI:
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def cancel_order(self, user_id: str, password: str, order_id: str) -> (int, str):
+    @staticmethod
+    def cancel_order(user_id: str, password: str, order_id: str) -> (int, str):
         """The buyer cancels an order.
 
         Parameters
@@ -362,9 +359,8 @@ class BuyerAPI:
             return 530, "{}".format(str(e))
         return 200, "ok"
 
-    def query_all_orders(
-        self, user_id: str, password: str
-    ) -> (int, str, Optional[list]):
+    @staticmethod
+    def query_all_orders(user_id: str, password: str) -> (int, str, list):
         """A buyer queries all his orders.
 
         Parameters
@@ -383,22 +379,21 @@ class BuyerAPI:
         try:
             cursor = get_user_col().find_one({"_id": user_id})
             if cursor is None:
-                return error.error_non_exist_user_id(user_id) + (None,)
+                return error.error_non_exist_user_id(user_id) + ([],)
 
             if cursor["password"] != password:
-                return error.error_authorization_fail() + (None,)
+                return error.error_authorization_fail() + ([],)
 
             order_cursors = get_order_col().find({"buyer": user_id})
 
         except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e)), None
+            return 528, "{}".format(str(e)), []
         except BaseException as e:
-            return 530, "{}".format(str(e)), None
+            return 530, "{}".format(str(e)), []
         return 200, "ok", list(order_cursors)
 
-    def query_one_order(
-        self, user_id: str, password: str, order_id: str
-    ) -> (int, str, Optional[dict]):
+    @staticmethod
+    def query_one_order(user_id: str, password: str, order_id: str) -> (int, str, dict):
         """A buyer queries one specified order.
 
         Parameters
@@ -420,17 +415,17 @@ class BuyerAPI:
         try:
             cursor = get_user_col().find_one({"_id": user_id})
             if cursor is None:
-                return error.error_non_exist_user_id(user_id) + (None,)
+                return error.error_non_exist_user_id(user_id) + ({},)
 
             if cursor["password"] != password:
-                return error.error_authorization_fail() + (None,)
+                return error.error_authorization_fail() + ({},)
 
             cursor = get_order_col().find_one({"_id": order_id})
             if cursor is None:
-                return error.error_non_exist_order_id(order_id) + (None,)
+                return error.error_non_exist_order_id(order_id) + ({},)
 
         except pymongo.errors.PyMongoError as e:
-            return 528, "{}".format(str(e)), None
+            return 528, "{}".format(str(e)), {}
         except BaseException as e:
-            return 530, "{}".format(str(e)), None
+            return 530, "{}".format(str(e)), {}
         return 200, "ok", cursor

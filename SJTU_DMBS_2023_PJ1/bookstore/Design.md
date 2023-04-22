@@ -71,7 +71,7 @@ PRIMARY KEY(order_id, book_id)
 ##### Doc book
 
 - _id (store_id, book_id)
-- book_info (class, 比较复杂！以 json_str 形式？)
+- book_info (class)
 - stock_level
 
 

@@ -29,18 +29,34 @@ class TestQueryBook:
             code = self.seller.add_book(self.store_id, 0, b)
             assert code == 200
         for b in self.books:
-            code , result = self.search.query_book(store_id = self.store_id, id = b.id)
+            code, result = self.search.query_book(store_id=self.store_id, id=b.id)
             assert code == 200
             assert result != None and len(result) == 1
-    
+
     def test_book_not_exist(self):
         for b in self.books:
             code = self.seller.add_book(self.store_id, 0, b)
             assert code == 200
-        
+
         for b in self.books:
-            code , result = self.search.query_book(store_id = self.store_id+'x', id = b.id)
+            code, result = self.search.query_book(store_id=self.store_id + "x", id=b.id)
             assert code == 200
             assert result != None and len(result) == 0
 
+    def test_invalid_query(self):
+        code, result = self.search.query_book(_id="xxx")
+        assert code == 525
 
+    def test_title_keyword_query_ok(self):
+        for b in self.books:
+            code = self.seller.add_book(self.store_id, 0, b)
+            assert code == 200
+
+        for b in self.books:
+            title_len = len(b.title)
+            if title_len > 3:
+                title_keyword = b.title[:3]
+                code, result = self.search.query_book(title_keyword=title_keyword)
+                assert code == 200
+                assert len(result) > 0
+                assert result[0]["title"] == b.title

@@ -1,5 +1,6 @@
 import logging
 import os
+import sys
 from flask import Flask
 from flask import Blueprint
 from flask import request
@@ -29,15 +30,18 @@ def be_run():
     this_path = os.path.dirname(__file__)
     parent_path = os.path.dirname(this_path)
     log_file = os.path.join(parent_path, "app.log")
-    init_database()
 
-    logging.basicConfig(filename=log_file, level=logging.ERROR)
+    # logging.basicConfig(filename=log_file, level=logging.ERROR)
+    logging.basicConfig(stream=sys.stdout, level=logging.INFO)
+
     handler = logging.StreamHandler()
     formatter = logging.Formatter(
         "%(asctime)s [%(threadName)-12.12s] [%(levelname)-5.5s]  %(message)s"
     )
     handler.setFormatter(formatter)
     logging.getLogger().addHandler(handler)
+
+    init_database()
 
     app = Flask(__name__)
     app.register_blueprint(bp_shutdown)

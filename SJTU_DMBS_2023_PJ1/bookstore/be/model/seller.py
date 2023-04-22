@@ -18,8 +18,8 @@ from be.model.mongo_manager import (
 class SellerAPI:
     """Backend APIs related to seller manipulation."""
 
+    @staticmethod
     def add_book(
-        self,
         user_id: str,
         store_id: str,
         book_id: str,
@@ -77,8 +77,9 @@ class SellerAPI:
 
         return 200, "ok"
 
+    @staticmethod
     def add_stock_level(
-        self, user_id: str, store_id: str, book_id: str, add_stock_level: int
+        user_id: str, store_id: str, book_id: str, add_stock_level: int
     ) -> (int, str):
         """Add the stock_level of a book in a store.
 
@@ -132,7 +133,8 @@ class SellerAPI:
 
         return 200, "ok"
 
-    def create_store(self, user_id: str, store_id: str) -> (int, str):
+    @staticmethod
+    def create_store(user_id: str, store_id: str) -> (int, str):
         """A user create a store.
 
         Parameters
@@ -169,7 +171,8 @@ class SellerAPI:
 
         return 200, "ok"
 
-    def mark_order_shipped(self, store_id: str, order_id: str) -> (int, str):
+    @staticmethod
+    def mark_order_shipped(store_id: str, order_id: str) -> (int, str):
         """The seller marks an order as shipped.
 
         Parameters

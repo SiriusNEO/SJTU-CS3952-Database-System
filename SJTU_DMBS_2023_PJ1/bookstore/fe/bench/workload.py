@@ -6,6 +6,7 @@ from fe.access import book
 from fe.access.new_seller import register_new_seller
 from fe.access.new_buyer import register_new_buyer
 from fe.access.buyer import Buyer
+from fe.access.search import Search
 from fe import conf
 
 
@@ -21,12 +22,42 @@ class NewOrder:
 
 
 class Payment:
-    def __init__(self, buyer:Buyer, order_id):
+    def __init__(self, buyer: Buyer, order_id):
         self.buyer = buyer
         self.order_id = order_id
 
     def run(self) -> bool:
         code = self.buyer.payment(self.order_id)
+        return code == 200
+
+
+class QueryOneOrder:
+    def __init__(self, buyer: Buyer, order_id):
+        self.buyer = buyer
+        self.order_id = order_id
+
+    def run(self) -> bool:
+        code, _ = self.buyer.query_one_order(self.order_id)
+        return code == 200
+
+
+class QueryAllOrders:
+    def __init__(self, buyer: Buyer, order_id):
+        self.buyer = buyer
+        self.order_id = order_id
+
+    def run(self) -> bool:
+        code, _ = self.buyer.query_all_orders()
+        return code == 200
+
+
+class QueryBookById:
+    def __init__(self, book_id):
+        self.search = Search(conf.URL)
+        self.book_id = book_id
+
+    def run(self) -> bool:
+        code, _ = self.search.query_book(id=self.book_id)
         return code == 200
 
 
@@ -65,10 +96,14 @@ class Workload:
         self.n_payment_ok_past = 0
 
     def to_seller_id_and_password(self, no: int) -> (str, str):
-        return "seller_{}_{}".format(no, self.uuid), "password_seller_{}_{}".format(no, self.uuid)
+        return "seller_{}_{}".format(no, self.uuid), "password_seller_{}_{}".format(
+            no, self.uuid
+        )
 
     def to_buyer_id_and_password(self, no: int) -> (str, str):
-        return "buyer_{}_{}".format(no, self.uuid), "buyer_seller_{}_{}".format(no, self.uuid)
+        return "buyer_{}_{}".format(no, self.uuid), "buyer_seller_{}_{}".format(
+            no, self.uuid
+        )
 
     def to_store_id(self, seller_no: int, i):
         return "store_s_{}_{}_{}".format(seller_no, i, self.uuid)
@@ -124,12 +159,18 @@ class Workload:
         new_ord = NewOrder(b, store_id, book_id_and_count)
         return new_ord
 
-    def update_stat(self, n_new_order, n_payment,
-                    n_new_order_ok, n_payment_ok,
-                    time_new_order, time_payment):
+    def update_stat(
+        self,
+        n_new_order,
+        n_payment,
+        n_new_order_ok,
+        n_payment_ok,
+        time_new_order,
+        time_payment,
+    ):
         # 获取当前并发数
         thread_num = len(threading.enumerate())
-        # 加索
+        # 加锁
         self.lock.acquire()
         self.n_new_order = self.n_new_order + n_new_order
         self.n_payment = self.n_payment + n_payment
@@ -141,9 +182,12 @@ class Workload:
         n_new_order_diff = self.n_new_order - self.n_new_order_past
         # 计算这段时间内新付款订单的总数目
         n_payment_diff = self.n_payment - self.n_payment_past
-        
-        if self.n_payment != 0 and self. n_new_order != 0 \
-                and (self.time_payment + self.time_new_order):
+
+        if (
+            self.n_payment != 0
+            and self.n_new_order != 0
+            and (self.time_payment + self.time_new_order)
+        ):
             # TPS_C(吞吐量):成功创建订单数量/(提交订单时间/提交订单并发数 + 提交付款订单时间/提交付款订单并发数)
             # NO=OK:新创建订单数量
             # Thread_num:以新提交订单的数量作为并发数(这一次的TOTAL-上一次的TOTAL)
@@ -153,11 +197,26 @@ class Workload:
             # Thread_num:以新提交付款订单的数量作为并发数(这一次的TOTAL-上一次的TOTAL)
             # TOTAL:总付款提交订单数量
             # LATENCY:提交付款订单时间/处理付款订单笔数(只考虑该线程延迟，未考虑并发)
-            logging.info("TPS_C={}, NO=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , P=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}".format(
-                        int(self.n_new_order_ok / (self.time_payment / n_payment_diff + self.time_new_order / n_new_order_diff)), # 吞吐量:完成订单数/((付款所用时间+订单所用时间)/并发数)
-                        self.n_new_order_ok, n_new_order_diff, self.n_new_order, self.time_new_order / self.n_new_order, # 订单延迟:(创建订单所用时间/并发数)/新创建订单数
-                        self.n_payment_ok, n_payment_diff, self.n_payment, self.time_payment / self.n_payment # 付款延迟:(付款所用时间/并发数)/付款订单数
-                        ))
+            logging.info(
+                "TPS_C={}, NO=OK:{} Thread_num:{} TOTAL:{} LATENCY:{} , P=OK:{} Thread_num:{} TOTAL:{} LATENCY:{}".format(
+                    int(
+                        self.n_new_order_ok
+                        / (
+                            self.time_payment / n_payment_diff
+                            + self.time_new_order / n_new_order_diff
+                        )
+                    ),  # 吞吐量:完成订单数/((付款所用时间+订单所用时间)/并发数)
+                    self.n_new_order_ok,
+                    n_new_order_diff,
+                    self.n_new_order,
+                    self.time_new_order
+                    / self.n_new_order,  # 订单延迟:(创建订单所用时间/并发数)/新创建订单数
+                    self.n_payment_ok,
+                    n_payment_diff,
+                    self.n_payment,
+                    self.time_payment / self.n_payment,  # 付款延迟:(付款所用时间/并发数)/付款订单数
+                )
+            )
         self.lock.release()
         # 旧值更新为新值，便于下一轮计算
         self.n_new_order_past = self.n_new_order

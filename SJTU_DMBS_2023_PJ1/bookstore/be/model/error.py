@@ -7,14 +7,14 @@ error_code = {
     515: "non exist book id {}",
     516: "exist book id {}",
     517: "stock level low, book id {}",
-    518: "invalid order id {}",
+    518: "",
     519: "not sufficient funds, order id {}",
     520: "non exist order id",
     521: "exist order id",
     522: "the order state is error, order state: {}",
     523: "the user is not match {},{}",
     524: "the store is not match {},{}",
-    525: "",
+    525: "invalid behaviour in query book API",
     526: "",
     527: "",
     528: "",
@@ -75,6 +75,10 @@ def error_user_id_match(user1, user2):
 
 def error_store_id_match(store1, store2):
     return 524, error_code[524].format(store1, store2)
+
+
+def error_invalid_query_book_behaviour():
+    return 525, error_code[525].format()
 
 
 def error_authorization_fail():

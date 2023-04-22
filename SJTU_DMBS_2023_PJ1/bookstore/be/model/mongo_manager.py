@@ -29,24 +29,49 @@ class MongoManager:
         self.store_col = self.database[self.STORE_COL_NAME]
         self.order_col = self.database[self.ORDER_COL_NAME]
 
-        #create index
-        self.book_col.create_index([("id",1)])
-        self.book_col.create_index([("title",1)])
-        self.book_col.create_index([("author",1)])
-        self.book_col.create_index([("publisher",1)])
-        self.book_col.create_index([("original_title",1)])
-        self.book_col.create_index([("translator",1)])
-        self.book_col.create_index([("pub_year",1)])
-        self.book_col.create_index([("pages",1)])
-        self.book_col.create_index([("price",1)])
-        self.book_col.create_index([("currency_unit",1)])
-        self.book_col.create_index([("binding",1)])
-        self.book_col.create_index([("isbn",1)])
+        # create index for orders
+        self.order_col.create_index([("user_id", 1)])
+
+        # create index for books
+        self.book_col.create_index([("id", 1)])
+
+        # create text index for title
+        self.book_col.create_index([("title", pymongo.TEXT)])
+
+        self.book_col.create_index([("author", 1)])
+        self.book_col.create_index([("publisher", 1)])
+        self.book_col.create_index([("original_title", 1)])
+        self.book_col.create_index([("translator", 1)])
+        self.book_col.create_index([("pub_year", 1)])
+        self.book_col.create_index([("pages", 1)])
+        self.book_col.create_index([("price", 1)])
+        self.book_col.create_index([("currency_unit", 1)])
+        self.book_col.create_index([("binding", 1)])
+        self.book_col.create_index([("isbn", 1)])
 
         # This columns are too big to make index or make hashed index for substitution
         # self.book_col.create_index([("author_intro",1)])
         # self.book_col.create_index([("book_intro",1)])
         # self.book_col.create_index([("content",1)])
+
+        # init finish. display current index
+        logging.info("MongoDB manager init finish.")
+        logging.info(
+            "Collection User Indices: "
+            + str(list(dict(self.user_col.index_information()).keys()))
+        )
+        logging.info(
+            "Collection Book Indices: "
+            + str(list(dict(self.book_col.index_information()).keys()))
+        )
+        logging.info(
+            "Collection Store Indices: "
+            + str(list(dict(self.store_col.index_information()).keys()))
+        )
+        logging.info(
+            "Collection Order Indices: "
+            + str(list(dict(self.order_col.index_information()).keys()))
+        )
 
 
 # Global instance of the manager

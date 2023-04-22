@@ -13,13 +13,21 @@ from be.model.mongo_manager import (
     book_id_exists,
     order_id_exists,
 )
-from be.model.error import error_code
+from be.model.error import error_invalid_query_book_behaviour
+
 
 class SearchAPI:
-    def query_book(self, **kwargs) -> (int, str, list):
+    @staticmethod
+    def query_book(**kwargs) -> (int, str, list):
         """
-            Query books
-            Parameters:
+        Query books
+
+        Parameters
+        ----------
+        kwargs : dict
+            The restriction of this query.
+
+            The keys of this dict can be:
                 id
                 store_id
                 title
@@ -36,14 +44,33 @@ class SearchAPI:
                 author_intro
                 book_intro
                 content
-        """
-        if '_id' in kwargs:
-            return 525, error_code[525]
-        
-        if 'store_id' in kwargs:
-            kwargs['_id.store_id'] = kwargs['store_id']
-            del kwargs['store_id']
+                title_keyword
 
-        cursor = get_book_col().find(kwargs)
-        
+        Returns
+        -------
+        (code : int, msg : str, books: list)
+            The return status and the queried books.
+        """
+        try:
+            if "_id" in kwargs:
+                return error_invalid_query_book_behaviour() + ([],)
+
+            if "store_id" in kwargs:
+                kwargs["_id.store_id"] = kwargs["store_id"]
+                del kwargs["store_id"]
+
+            if "title_keyword" in kwargs:
+                if "title" in kwargs:
+                    return error_invalid_query_book_behaviour() + ([],)
+
+                kwd = kwargs["title_keyword"]
+                del kwargs["title_keyword"]
+                # kwargs["$text"] = {"$search": kwd}
+                kwargs["title"] = {"$regex": kwd}
+
+            cursor = get_book_col().find(kwargs)
+        except pymongo.errors.PyMongoError as e:
+            return 528, "{}".format(str(e)), None
+        except BaseException as e:
+            return 530, "{}".format(str(e)), None
         return 200, "ok", list(cursor)
