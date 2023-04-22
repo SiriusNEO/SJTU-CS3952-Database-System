@@ -29,6 +29,25 @@ class MongoManager:
         self.store_col = self.database[self.STORE_COL_NAME]
         self.order_col = self.database[self.ORDER_COL_NAME]
 
+        #create index
+        self.book_col.create_index([("id",1)])
+        self.book_col.create_index([("title",1)])
+        self.book_col.create_index([("author",1)])
+        self.book_col.create_index([("publisher",1)])
+        self.book_col.create_index([("original_title",1)])
+        self.book_col.create_index([("translator",1)])
+        self.book_col.create_index([("pub_year",1)])
+        self.book_col.create_index([("pages",1)])
+        self.book_col.create_index([("price",1)])
+        self.book_col.create_index([("currency_unit",1)])
+        self.book_col.create_index([("binding",1)])
+        self.book_col.create_index([("isbn",1)])
+
+        # This columns are too big to make index or make hashed index for substitution
+        # self.book_col.create_index([("author_intro",1)])
+        # self.book_col.create_index([("book_intro",1)])
+        # self.book_col.create_index([("content",1)])
+
 
 # Global instance of the manager
 glb_manager: MongoManager = None
