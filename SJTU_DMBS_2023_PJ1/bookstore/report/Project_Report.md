@@ -4,11 +4,11 @@
 
 组号：第四小组
 
-| 姓名   | 学号         | 分工                                              |
-| ------ | ------------ | ------------------------------------------------- |
-| 林超凡 | 520021911042 | 前 60% 基础架构搭建，文档撰写，完善测试，代码管理 |
-| 潘开森 | 520030910140 | 订单查询，订单发货、收货、超时过期机制            |
-| 翟明舒 | 520021910671 | 图书查询，索引添加                                |
+| 姓名           | 学号         | 分工                                              |
+| -------------- | ------------ | ------------------------------------------------- |
+| 林超凡（组长） | 520021911042 | 前 60% 基础架构搭建，文档撰写，完善测试，代码管理 |
+| 潘开森         | 520030910140 | 订单查询，订单发货、收货、超时过期机制            |
+| 翟明舒         | 520021910671 | 图书查询，索引添加                                |
 
 
 
@@ -177,11 +177,11 @@ query_book(title_keyword="美丽", author="xxx")
 | test_payment.py     | 之前的测试点并没有测试金额是否能正确在账户之间流通，我们添加了相关测试；此外，我们还添加了一个用户付款多个订单的测试。 |
 | test_order_state.py | 除了正常的 bench 测试以外，我们还添加了 query_order 的 bench 测试和 query_books 的 bench 测试。 |
 
- 
+
 
 ### 性能测试（Bench）
 
-性能测试主要包含原来的多线程 bench 以及我们添加的关于查询订单、查询书本的 bench。
+性能测试主要包含原来的多线程 bench 以及我们添加的关于查询订单、查询书本的 bench。**如果想快速跑完所有正确性测试，请将此部分测试参数调小或者删掉！**
 
 - 多线程 bench performance
 
@@ -200,24 +200,84 @@ query_book(title_keyword="美丽", author="xxx")
   Use_Large_DB = False
   ```
 
-  运行表现是
-
-  
-
-
+  运行表现是 116s。
 
 - 查询订单 bench performance
 
-  | 查询次数 | 有无索引 | 时间  |
-  | -------- | -------- | ----- |
-  | 500      | 无       | 59.60 |
-  | 500      | 有       | 57.27 |
+  | 查询次数 | 有无索引 | 时间（s） |
+  | -------- | -------- | --------- |
+  | 500      | 无       | 59.60     |
+  | 500      | 有       | 57.27     |
 
 - 查询书本 bench performance
-  | 查询次数 | 有无索引 | 时间   |
-  | -------- | -------- | ------ |
-  | 1000     | 无       | 280.20 |
-  | 1000     | 有       | 264.50 |
+  | 查询次数 | 有无索引 | 时间（s） |
+  | -------- | -------- | --------- |
+  | 1000     | 无       | 280.20    |
+  | 1000     | 有       | 264.50    |
+
+由此也可以窥见索引的加速效果。
+
+
+
+### 测试表现
+
+我们的代码测试覆盖率能达到 92% 以上。对于有些部分（比如 MongoDB 错误和 Python 错误），测试可能覆盖不到而且我们认为也没必要覆盖。以下是一份报告。
+
+```
+Name                                     Stmts   Miss Branch BrPart  Cover
+--------------------------------------------------------------------------
+be/__init__.py                               0      0      0      0   100%
+be/app.py                                    3      3      2      0     0%
+be/model/__init__.py                         0      0      0      0   100%
+be/model/buyer.py                          168     24     78      4    85%
+be/model/error.py                           33      2      0      0    94%
+be/model/mongo_manager.py                   54      1      0      0    98%
+be/model/search.py                          26      5     10      1    78%
+be/model/seller.py                          75     24     32      2    68%
+be/model/user.py                           144     46     40      4    65%
+be/model/utils.py                            6      0      2      0   100%
+be/serve.py                                 38      1      2      1    95%
+be/view/__init__.py                          0      0      0      0   100%
+be/view/auth.py                             42      0      0      0   100%
+be/view/buyer.py                            65      0      2      0   100%
+be/view/search.py                           10      0      0      0   100%
+be/view/seller.py                           38      0      0      0   100%
+fe/__init__.py                               0      0      0      0   100%
+fe/access/__init__.py                        0      0      0      0   100%
+fe/access/auth.py                           31      0      0      0   100%
+fe/access/book.py                           70      1     12      2    96%
+fe/access/buyer.py                          62      0      2      0   100%
+fe/access/new_buyer.py                       8      0      0      0   100%
+fe/access/new_seller.py                      8      0      0      0   100%
+fe/access/search.py                         10      0      0      0   100%
+fe/access/seller.py                         38      0      0      0   100%
+fe/bench/__init__.py                         0      0      0      0   100%
+fe/bench/query_book_bench.py                18      0      2      0   100%
+fe/bench/query_order_bench.py               36      0      6      0   100%
+fe/bench/run.py                             37      3     14      3    88%
+fe/bench/session.py                         49      0     12      1    98%
+fe/bench/workload.py                       147      1     22      2    98%
+fe/conf.py                                  13      0      0      0   100%
+fe/conftest.py                              17      0      0      0   100%
+fe/test/gen_book_data.py                    48      0     16      0   100%
+fe/test/test_add_book.py                    36      0     10      0   100%
+fe/test/test_add_funds.py                   26      0      0      0   100%
+fe/test/test_add_stock_level.py             39      0     10      0   100%
+fe/test/test_bench.py                       16      6      0      0    62%
+fe/test/test_cancel_order.py                92      2      8      2    96%
+fe/test/test_create_store.py                25      0      0      0   100%
+fe/test/test_login.py                       28      0      0      0   100%
+fe/test/test_new_order.py                   46      0      2      0   100%
+fe/test/test_order_state.py                 60      1      4      1    97%
+fe/test/test_password.py                    33      0      0      0   100%
+fe/test/test_payment.py                    110      2      8      2    97%
+fe/test/test_query_book.py                  50      0     14      1    98%
+fe/test/test_query_order.py                 77      1      8      1    98%
+fe/test/test_register.py                    31      0      0      0   100%
+fe/test/test_ship_and_receive_order.py      95      1      4      1    98%
+--------------------------------------------------------------------------
+TOTAL                                     2058    124    322     28    92%
+```
 
 
 
