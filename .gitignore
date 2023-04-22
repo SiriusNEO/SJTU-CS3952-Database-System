@@ -1,6 +1,10 @@
+# demo
+bookstore_demo
+
 # database files
 *.db
 mongodb/
+*.log
 
 # Py cache
 __pycache__/
