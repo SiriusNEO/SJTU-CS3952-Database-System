@@ -518,5 +518,7 @@ TOTAL                                     2241    183    332     31    90%
 
 本项目采用 git 作为版本管理工具，使用 Github 作为云代码托管服务。
 
+由于本次为单人作业，故并不采用分支进行开发，而是直接在 main 分支 commit。
+
 项目地址：https://github.com/SiriusNEO/SJTU-CS3952-Database-System
 
