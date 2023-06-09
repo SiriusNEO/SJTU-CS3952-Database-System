@@ -51,6 +51,7 @@ class BuyerAPI:
                 return error.error_non_exist_store_id(store_id) + (order_id,)
 
             session = get_session()
+            books_data = []
 
             for book_id, count in books:
                 cursor = session.query(Book).filter_by(id=book_id, store_id=store_id)
@@ -68,13 +69,7 @@ class BuyerAPI:
                 cursor.update({"stock_level": Book.stock_level - count})
 
                 total_price += count * price
-                order_data_book = OrderDetail(
-                    order_id=order_id,
-                    book_id=book_id,
-                    count=count,
-                    price=price,
-                )
-                session.add(order_data_book)
+                books_data.append([book_id, count, price])
 
             now_time = time.time()
             order = Order(
@@ -86,6 +81,15 @@ class BuyerAPI:
                 timestamp=now_time,
             )
             session.add(order)
+
+            for book_id, count, price in books_data:
+                order_data_book = OrderDetail(
+                    order_id=order_id,
+                    book_id=book_id,
+                    count=count,
+                    price=price,
+                )
+                session.add(order_data_book)
 
             session.commit()
             session.close()
@@ -131,6 +135,10 @@ class BuyerAPI:
             if result.status != "unpaid":
                 session.close()
                 return error.error_order_status(result.status)
+
+            if result.buyer is None:
+                session.close()
+                return error.error_non_exist_user_id(user_id)
 
             if result.buyer != user_id:
                 session.close()

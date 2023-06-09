@@ -2,7 +2,16 @@
 
 import os
 import logging
-from sqlalchemy import create_engine, Column, Integer, String, Text, Enum, Float
+from sqlalchemy import (
+    create_engine,
+    Column,
+    Integer,
+    String,
+    Text,
+    Enum,
+    Float,
+    ForeignKey,
+)
 from sqlalchemy.orm import sessionmaker, declarative_base
 from sqlalchemy.exc import SQLAlchemyError
 
@@ -31,7 +40,9 @@ class Book(Base):
 
     # two primary keys here
     id = Column(String(ID_LEN), primary_key=True, comment="book id")
-    store_id = Column(String(ID_LEN), primary_key=True, comment="store id")
+    store_id = Column(
+        String(ID_LEN), ForeignKey("Store.id"), primary_key=True, comment="store id"
+    )
     stock_level = Column(
         Integer, nullable=False, comment="remains of the books in this store"
     )
@@ -61,16 +72,30 @@ class Store(Base):
     __tablename__ = "Store"
 
     id = Column(String(ID_LEN), primary_key=True, comment="store id")
-    owner = Column(String(ID_LEN), nullable=False, comment="owner of the store")
+    owner = Column(
+        String(ID_LEN),
+        ForeignKey("User.id"),
+        nullable=False,
+        comment="owner of the store",
+    )
 
 
 class Order(Base):
     __tablename__ = "Order"
 
     id = Column(String(ID_LEN), primary_key=True, comment="order id")
-    buyer = Column(String(ID_LEN), nullable=False, comment="buyer of the order")
+    buyer = Column(
+        String(ID_LEN),
+        ForeignKey("User.id", ondelete="SET NULL"),
+        nullable=True,
+        comment="buyer of the order",
+    )
     store_id = Column(
-        String(ID_LEN), nullable=False, index=True, comment="store of the order"
+        String(ID_LEN),
+        ForeignKey("Store.id"),
+        nullable=False,
+        index=True,
+        comment="store of the order",
     )
     total_price = Column(Integer, nullable=False, comment="total cost of the order")
     status = Column(
@@ -85,7 +110,13 @@ class OrderDetail(Base):
     __tablename__ = "OrderDetail"
 
     # two primary keys here
-    order_id = Column(String(ID_LEN), primary_key=True, comment="order id")
+    order_id = Column(
+        String(ID_LEN),
+        ForeignKey("Order.id", ondelete="CASCADE"),
+        primary_key=True,
+        comment="order id",
+    )
+    # There is no unique constraint in book.id, so don't set it as ForeignKey.
     book_id = Column(String(ID_LEN), primary_key=True, comment="book id")
     count = Column(
         Integer, nullable=False, comment="the number of this book in the order"

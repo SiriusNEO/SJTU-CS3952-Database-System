@@ -44,11 +44,164 @@ be/model/
 
 ### ER 图
 
-...
+![](ER.png)
 
 ### 结构设计
 
-...
+根据 ER 图，我们先对每个 Entity 设计一张表：`User`，`Book`，`Order`，`Store`；
+
+对于 Relation：
+
+- 所有 1 对多的关系均在 "多" 的那一侧存储相应 id。例如对于 Store 与 Book 的 1 对多关系，在 Book 处存储一个 store_id。
+- 对于 Order 与 Book 间的多对多关系，选择另开一张关系表 `OrderDetail` 进行存储。
+
+此外注意，对于 book info，我们将这个字典的所有键值（title，author，等等）展开并放到最上层，并分别选择合适的数据类型。
+
+### ORM 与表结构
+
+基于结构设计，ORM 的类型定义见：`bookstore/be/mode/base.py `.
+
+最终设计出的 SQL 表结构如下所示：
+
+```
+ Schema |    Name     | Type  |  Owner   
+--------+-------------+-------+----------
+ public | Book        | table | postgres
+ public | Order       | table | postgres
+ public | OrderDetail | table | postgres
+ public | Store       | table | postgres
+ public | User        | table | postgres
+```
+
+##### Table User
+
+```
+                        Table "public.User"
+  Column  |          Type          | Collation | Nullable | Default 
+----------+------------------------+-----------+----------+---------
+ id       | character varying(256) |           | not null | 
+ password | character varying(256) |           | not null | 
+ balance  | integer                |           | not null | 
+ token    | character varying(512) |           |          | 
+ terminal | character varying(512) |           | not null | 
+Indexes:
+    "User_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE ""Order"" CONSTRAINT "Order_buyer_fkey" FOREIGN KEY (buyer) REFERENCES "User"(id) ON DELETE SET NULL
+    TABLE ""Store"" CONSTRAINT "Store_owner_fkey" FOREIGN KEY (owner) REFERENCES "User"(id)
+```
+
+##### Table Book
+
+
+```
+                           Table "public.Book"
+     Column     |          Type          | Collation | Nullable | Default 
+----------------+------------------------+-----------+----------+---------
+ id             | character varying(256) |           | not null | 
+ store_id       | character varying(256) |           | not null | 
+ stock_level    | integer                |           | not null | 
+ title          | text                   |           | not null | 
+ author         | text                   |           | not null | 
+ publisher      | text                   |           | not null | 
+ original_title | text                   |           | not null | 
+ translator     | text                   |           | not null | 
+ pub_year       | text                   |           | not null | 
+ pages          | integer                |           | not null | 
+ price          | integer                |           | not null | 
+ binding        | text                   |           | not null | 
+ isbn           | text                   |           | not null | 
+ currency_unit  | text                   |           | not null | 
+ tags           | text                   |           | not null | 
+ pictures       | text                   |           | not null | 
+ author_intro   | text                   |           | not null | 
+ book_intro     | text                   |           | not null | 
+ content        | text                   |           | not null |
+ Indexes:
+    "Book_pkey" PRIMARY KEY, btree (id, store_id)
+    "ix_Book_author" btree (author)
+    "ix_Book_binding" btree (binding)
+    "ix_Book_currency_unit" btree (currency_unit)
+    "ix_Book_isbn" btree (isbn)
+    "ix_Book_original_title" btree (original_title)
+    "ix_Book_pages" btree (pages)
+    "ix_Book_price" btree (price)
+    "ix_Book_pub_year" btree (pub_year)
+    "ix_Book_publisher" btree (publisher)
+    "ix_Book_title" btree (title)
+    "ix_Book_translator" btree (translator)
+Foreign-key constraints:
+    "Book_store_id_fkey" FOREIGN KEY (store_id) REFERENCES "Store"(id)
+```
+
+##### Table Order
+
+```
+                         Table "public.Order"
+   Column    |          Type          | Collation | Nullable | Default 
+-------------+------------------------+-----------+----------+---------
+ id          | character varying(256) |           | not null | 
+ buyer       | character varying(256) |           |          | 
+ store_id    | character varying(256) |           | not null | 
+ total_price | integer                |           | not null | 
+ status      | status                 |           | not null | 
+ timestamp   | double precision       |           | not null | 
+Indexes:
+    "Order_pkey" PRIMARY KEY, btree (id)
+    "ix_Order_store_id" btree (store_id)
+Foreign-key constraints:
+    "Order_buyer_fkey" FOREIGN KEY (buyer) REFERENCES "User"(id) ON DELETE SET NULL
+    "Order_store_id_fkey" FOREIGN KEY (store_id) REFERENCES "Store"(id)
+Referenced by:
+    TABLE ""OrderDetail"" CONSTRAINT "OrderDetail_order_id_fkey" FOREIGN KEY (order_id) REFERENCES "Order"(id) ON DELETE CASCADE
+```
+
+##### Table Store
+
+```
+                         Table "public.Store"
+ Column |          Type          | Collation | Nullable | Default 
+--------+------------------------+-----------+----------+---------
+ id     | character varying(256) |           | not null | 
+ owner  | character varying(256) |           | not null | 
+Indexes:
+    "Store_pkey" PRIMARY KEY, btree (id)
+Foreign-key constraints:
+    "Store_owner_fkey" FOREIGN KEY (owner) REFERENCES "User"(id)
+Referenced by:
+    TABLE ""Book"" CONSTRAINT "Book_store_id_fkey" FOREIGN KEY (store_id) REFERENCES "Store"(id)
+    TABLE ""Order"" CONSTRAINT "Order_store_id_fkey" FOREIGN KEY (store_id) REFERENCES "Store"(id)
+```
+
+##### Table OrderDetail
+
+```
+                     Table "public.OrderDetail"
+  Column  |          Type          | Collation | Nullable | Default 
+----------+------------------------+-----------+----------+---------
+ order_id | character varying(256) |           | not null | 
+ book_id  | character varying(256) |           | not null | 
+ count    | integer                |           | not null | 
+ price    | integer                |           | not null | 
+Indexes:
+    "OrderDetail_pkey" PRIMARY KEY, btree (order_id, book_id)
+Foreign-key constraints:
+    "OrderDetail_order_id_fkey" FOREIGN KEY (order_id) REFERENCES "Order"(id) ON DELETE CASCADE
+```
+
+
+
+##### 备注
+
+- 大部份表都使用相应的 `id` 作为唯一主键，除了 `Book` 使用联合主键，这是因为在需求上每个店卖的书可能是不同的，书无法脱离店铺存在。
+
+- 设计上所有 1 对多的关系转化为的 id 都加上了外键（Foreign Key）约束，除了 `OrderDetail` 的 `book_id`  属性（这是因为 Book 使用的是 `book_id` + `store_id` 联合主键，单个 `book_id` 无法满足外键的唯一约束条件）。
+- 外键有两个地方设置了 ondelete action。考虑到用户可以注销（unregister），而 `Order` 外键引用了 `user_id`，因此需要考虑用户注销时对应的订单如何处理。
+  - 根据实际需求我们认为用户注销后也应该保存它的订单，因此选择将订单的 `buyer` 属性设置为 `SET NULL`（即用户注销时将对应订单的购买者置为 NULL）。
+  - 同时，`Order` 和 `OrderDetail` 我们采用 `CASCADE` 关系，即订单删除后对应的详单也全部删除。这是因为 `OrderDetail` 只不过是订单与书本多对多关系的储存方式，删除是合理的。
+- 键值的索引部分将在第五部分详细讲解。
+
+
 
 ## 3. 功能介绍 / APIs
 
@@ -317,9 +470,47 @@ TOTAL                                     2241    183    332     31    90%
 
 ### 索引
 
+我们需要对频繁查询且不易修改的字段加上索引。根据分析，大部分查询都是通过相应表的 `id` 进行，而由于 `id` 本身是表的 Primary Key，因此自身带有索引，无需特别指明。
+
+除此以外，还有两处需要我们进行索引考量：
+
+- `query_all_orders`。此接口需要以 ` buyer` 为 key 对 order 文档进行查询，注意到订单的 `buyer` 字段不会被修改，因此我们也对其添加索引。
+- `query_books`。由于 book 文档基本不会发生改变，因此我们可以尽量对我们可能查询到的 key 都加上索引。不过在实践上有些 columns 字段太大，无法添加索引（PostgreSQL 会报错），因此选择部分字段进行添加索引。
+
+最终索引的添加效果为：
+
+- 所有 Primary Keys。
+
+- 订单部分的索引。
+  
+  ```
+"ix_Order_store_id" btree (store_id)
+  ```
+  
+- 书本部分的索引。
+  ```
+  "ix_Book_author" btree (author)
+  "ix_Book_binding" btree (binding)
+  "ix_Book_currency_unit" btree (currency_unit)
+  "ix_Book_isbn" btree (isbn)
+  "ix_Book_original_title" btree (original_title)
+  "ix_Book_pages" btree (pages)
+  "ix_Book_price" btree (price)
+  "ix_Book_pub_year" btree (pub_year)
+  "ix_Book_publisher" btree (publisher)
+  "ix_Book_title" btree (title)
+  "ix_Book_translator" btree (translator)
+  ```
+
+在第四部分的测试结果中可以看到索引有着显著的加速效果。
+
 ### 事务
 
+在后端逻辑编写中，我们使用 SQLAchemy 提供的 Session 抽象给我们的逻辑加上了事务处理部分。具体来讲，事务处理在实现中包括：
 
+- 对于本次的书店任务，每个 API（注册，新订单，查书）均在一个事务（session）中完成。当所有数据操作完成后，统一在结尾 commit。
+- 对于一些特殊的小任务（例如 utils 中查询某些 id 是否存在），它们被封装在一个单独的事务中进行。
+- 异常处理上，如若中间发生任何异常，立即 rollback。当然如果本次事务并不包含数据修改，只需要 close 当前 session 即可。
 
 
 
